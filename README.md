@@ -7,6 +7,8 @@ Sistema de Administracion de Condominios.
 
 ## Responsable
 
+[@fabianbot1331](https://github.com/fabianbot1331) — API con base de datos. **Lenguaje por definir**: el andamiaje Node.js/Express es provisional. Ver [INTEGRANTE.md](INTEGRANTE.md).
+
 Integrante a cargo de **API con BD #3**. Este repositorio es **autonomo**: se
 desarrolla, prueba y despliega sin depender del avance de los demas
 microservicios.
