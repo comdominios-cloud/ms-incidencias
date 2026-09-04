@@ -1,0 +1,25 @@
+{
+  "name": "ms-incidencias",
+  "version": "0.1.0",
+  "description": "Microservicio de incidencias y reservas de areas comunes del condominio",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "echo \"Pendiente: tests\" && exit 0",
+    "seed": "node docs/seed_fake_data.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongoose": "^8.6.0",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5",
+    "swagger-ui-express": "^5.0.1",
+    "swagger-jsdoc": "^6.2.8"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.0.0"
+  },
+  "license": "MIT"
+}

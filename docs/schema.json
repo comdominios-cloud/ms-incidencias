@@ -1,0 +1,59 @@
+{
+  "_comentario": "ms-incidencias | Esquema inicial (MongoDB $jsonSchema). ANDAMIAJE: campos orientativos, ajustar en la fase de diseno.",
+  "colecciones": {
+    "incidencias": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["unidad_id", "titulo", "categoria", "estado", "creado_en"],
+        "properties": {
+          "unidad_id": { "bsonType": "long", "description": "id logico de la unidad en ms-residentes" },
+          "residente_id": { "bsonType": "long", "description": "id logico del residente en ms-residentes" },
+          "titulo": { "bsonType": "string", "maxLength": 160 },
+          "descripcion": { "bsonType": "string" },
+          "categoria": { "enum": ["PLOMERIA", "ELECTRICIDAD", "LIMPIEZA", "SEGURIDAD", "ASCENSOR", "OTRO"] },
+          "prioridad": { "enum": ["BAJA", "MEDIA", "ALTA"] },
+          "estado": { "enum": ["ABIERTA", "EN_PROCESO", "RESUELTA", "CERRADA"] },
+          "comentarios": {
+            "bsonType": "array",
+            "description": "historial embebido de la incidencia",
+            "items": {
+              "bsonType": "object",
+              "required": ["autor", "texto", "fecha"],
+              "properties": {
+                "autor": { "bsonType": "string" },
+                "texto": { "bsonType": "string" },
+                "fecha": { "bsonType": "date" }
+              }
+            }
+          },
+          "creado_en": { "bsonType": "date" },
+          "actualizado_en": { "bsonType": "date" }
+        }
+      },
+      "indices": [
+        { "campos": { "unidad_id": 1 } },
+        { "campos": { "estado": 1, "creado_en": -1 } }
+      ]
+    },
+    "reservas": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["unidad_id", "area_comun", "fecha_inicio", "fecha_fin", "estado"],
+        "properties": {
+          "unidad_id": { "bsonType": "long", "description": "id logico de la unidad en ms-residentes" },
+          "residente_id": { "bsonType": "long" },
+          "area_comun": { "enum": ["PARRILLA", "SALON_EVENTOS", "GIMNASIO", "PISCINA", "COWORKING"] },
+          "fecha_inicio": { "bsonType": "date" },
+          "fecha_fin": { "bsonType": "date" },
+          "num_personas": { "bsonType": "int", "minimum": 1 },
+          "estado": { "enum": ["SOLICITADA", "CONFIRMADA", "CANCELADA", "COMPLETADA"] },
+          "creado_en": { "bsonType": "date" }
+        }
+      },
+      "indices": [
+        { "campos": { "unidad_id": 1 } },
+        { "campos": { "area_comun": 1, "fecha_inicio": 1 } }
+      ]
+    }
+  }
+}
