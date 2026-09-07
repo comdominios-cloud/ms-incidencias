@@ -9,6 +9,7 @@ RUN npm install --omit=dev
 
 COPY . .
 
-EXPOSE 8003
+# Puerto interno del contenedor. Se publica como 9003 en la VM de produccion.
+EXPOSE 3003
 
 CMD ["node", "src/index.js"]

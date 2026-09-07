@@ -13,12 +13,25 @@ Integrante a cargo de **API con BD #3**. Este repositorio es **autonomo**: se
 desarrolla, prueba y despliega sin depender del avance de los demas
 microservicios.
 
+## Lenguaje pendiente
+
+El andamiaje actual es **Node.js + Express**, a modo provisional: el responsable
+aun no eligio el lenguaje. No puede ser **Python ni Java** (ya los usan
+ms-residentes y ms-pagos, y el curso exige 3 lenguajes distintos) y la base debe
+seguir siendo **MongoDB**, la unica NoSQL del proyecto. Detalle en
+[INTEGRANTE.md](INTEGRANTE.md).
+
 ## Dominio
 
 Registra los reclamos que levantan los residentes (plomeria, electricidad,
 ascensor, seguridad...) junto con su historial de comentarios, y administra las
 reservas de las areas comunes del condominio (parrilla, salon de eventos,
 gimnasio, piscina, coworking).
+
+> **Las reservas alimentan el analisis de datos.** El requerimiento de predecir
+> que area comun sera la mas visitada el proximo mes se calcula en `ms-analitico`
+> a partir de esta coleccion, via `ingesta03` -> S3 -> Glue -> Athena. Por eso
+> `area_comun` y `fecha_inicio` no pueden faltar en el documento.
 
 La informacion es naturalmente **semiestructurada**: cada incidencia embebe su
 propio hilo de comentarios en el mismo documento, por eso la base es NoSQL.
@@ -28,9 +41,10 @@ que tiene ese registro en ms-residentes). Este microservicio **no llama** a
 ningun otro: el cruce entre servicios lo resuelve **ms-ficha-residente**.
 
 ```
-web-condominio ──> API Gateway ──> ms-incidencias ──> MongoDB
-                                         ^
-                                         └── ms-ficha-residente (consume esta API)
+web-condominio ──> balanceador ──> ms-incidencias :9003 ──> MongoDB :27017
+                                          ^                 (VM de base de datos)
+                                          ├── ms-ficha-residente (consume esta API)
+                                          └── ingesta03 (lee la BD y la vuelca a S3)
 ```
 
 ## Stack
@@ -49,16 +63,26 @@ Ver [docs/schema.json](docs/schema.json) y [docs/der.md](docs/der.md).
 
 ## Puerto asignado
 
-**8003**
+**9003** publicado · **3003** dentro del contenedor.
 
-| Microservicio       | Puerto |
-|---------------------|--------|
-| ms-residentes       | 8001   |
-| ms-pagos            | 8002   |
-| ms-incidencias      | **8003** |
-| ms-ficha-residente  | 8004   |
-| ms-analitico        | 8005   |
-| web-condominio (dev)| 5173   |
+El curso asigno el rango **9000-12000** para los microservicios; ese es el puerto
+que se habilita en el Security Group.
+
+| Microservicio | Publicado | Interno |
+|---------------|-----------|---------|
+| ms-residentes | 9001      | 8000    |
+| ms-pagos      | 9002      | 8080    |
+| ms-incidencias| **9003**  | 3003    |
+| ms-ficha-residente | 9004 | 8004    |
+| ms-analitico  | 9005      | 8005    |
+| web-condominio (dev) | 5173 | —     |
+
+Las bases de datos **no** entran en ese rango: PostgreSQL 5432, MySQL 3306,
+MongoDB 27017, alcanzables solo desde los Security Groups de la VM de produccion
+y la VM de ingesta.
+
+> Si se cambia el lenguaje del microservicio, el puerto interno puede cambiar:
+> el que **no** cambia es el publicado, el **9003**.
 
 ## Endpoints REST planificados
 
@@ -78,7 +102,7 @@ Ver [docs/schema.json](docs/schema.json) y [docs/der.md](docs/der.md).
 Los dos endpoints que consume directamente el **frontend** son
 `GET /incidencias` y `GET /reservas`.
 
-Documentacion interactiva: `http://localhost:8003/docs` (Swagger-UI).
+Documentacion interactiva: `http://<ip-vm-produccion>:9003/docs` (Swagger-UI).
 
 ## Variables de entorno
 
@@ -87,15 +111,16 @@ Copiar [.env.example](.env.example) a `.env` y completar. **Nunca** commitear `.
 | Variable | Descripcion | Ejemplo |
 |----------|-------------|---------|
 | `APP_NAME` | Nombre del servicio | `ms-incidencias` |
-| `PORT` | Puerto de escucha | `8003` |
+| `PORT` | Puerto dentro del contenedor | `3003` |
+| `PUBLISHED_PORT` | Puerto publicado en la VM | `9003` |
 | `NODE_ENV` | Entorno de ejecucion | `development` / `production` |
 | `LOG_LEVEL` | Nivel de logging | `info` |
-| `MONGO_HOST` | Host de MongoDB | `mongo` (nombre del servicio en Compose) |
+| `MONGO_HOST` | IP privada de la VM de base de datos | *(sin valor en el repo)* |
 | `MONGO_PORT` | Puerto de MongoDB | `27017` |
 | `MONGO_DB` | Nombre de la base | `condominio_incidencias` |
 | `MONGO_USER` | Usuario de la base | *(sin valor en el repo)* |
 | `MONGO_PASSWORD` | Password del usuario | *(sin valor en el repo)* |
-| `MONGO_URI` | Cadena de conexion completa | `mongodb://mongo:27017/condominio_incidencias` |
+| `MONGO_URI` | Cadena de conexion completa | `mongodb://<ip-vm-bd>:27017/condominio_incidencias` |
 
 ## Como levantar con Docker
 
@@ -104,12 +129,12 @@ Copiar [.env.example](.env.example) a `.env` y completar. **Nunca** commitear `.
 ```bash
 cp .env.example .env      # completar credenciales
 docker build -t ms-incidencias .
-docker run --rm -p 8003:8003 --env-file .env ms-incidencias
+docker run --rm -p 9003:3003 --env-file .env ms-incidencias
 ```
 
-Luego abrir `http://localhost:8003/docs`.
+Luego abrir `http://localhost:9003/docs`.
 
-### Con MongoDB incluido (docker compose)
+### Con MongoDB incluido (desarrollo local)
 
 ```yaml
 services:
@@ -123,7 +148,7 @@ services:
 
   ms-incidencias:
     build: .
-    ports: ["8003:8003"]
+    ports: ["9003:3003"]
     env_file: .env
     depends_on: [mongo]
 
@@ -134,6 +159,15 @@ volumes:
 ```bash
 docker compose up --build
 ```
+
+### En AWS
+
+MongoDB corre como contenedor en la **VM de base de datos** (uno de los 3
+contenedores de esa maquina) y el microservicio en la **VM de produccion**, asi
+que `MONGO_HOST` apunta a la **IP privada** de la VM de base de datos.
+
+La imagen se publica en **Docker Hub** para que las 2 VM de produccion gemelas
+hagan `pull` de la misma version.
 
 ## Estructura
 
