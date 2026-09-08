@@ -7,19 +7,11 @@ Sistema de Administracion de Condominios.
 
 ## Responsable
 
-[@fabianbot1331](https://github.com/fabianbot1331) — API con base de datos. **Lenguaje por definir**: el andamiaje Node.js/Express es provisional. Ver [INTEGRANTE.md](INTEGRANTE.md).
+[@fabianbot1331](https://github.com/fabianbot1331) — API con base de datos. **Lenguaje**: Node.js/Express. Ver [INTEGRANTE.md](INTEGRANTE.md).
 
 Integrante a cargo de **API con BD #3**. Este repositorio es **autonomo**: se
 desarrolla, prueba y despliega sin depender del avance de los demas
 microservicios.
-
-## Lenguaje pendiente
-
-El andamiaje actual es **Node.js + Express**, a modo provisional: el responsable
-aun no eligio el lenguaje. No puede ser **Python ni Java** (ya los usan
-ms-residentes y ms-pagos, y el curso exige 3 lenguajes distintos) y la base debe
-seguir siendo **MongoDB**, la unica NoSQL del proyecto. Detalle en
-[INTEGRANTE.md](INTEGRANTE.md).
 
 ## Dominio
 
